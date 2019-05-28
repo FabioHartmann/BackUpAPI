@@ -26,7 +26,16 @@ export interface CardInterface extends Document {
 }
 
 const Card = new Schema({
-  id: { type: String },
+  id: {
+    type: String,
+    validate: {
+      validator: async (id): Promise<boolean> => {
+        const search = await model('Card').findOne({ id: id })
+
+        if (search) return false
+      },
+      msg: 'Carta já adicionada'
+    } },
   name: { type: String },
   desc: { type: String },
   atk: { type: String },
