@@ -14,15 +14,11 @@ export interface CardInterface extends Document {
   attribute?: string
   scale?: string
   linkval?: string
-  linkmarkers?: string
+  linkmarkers?: Array<any>
   archetype?: string
-  set_tag?: string
-  setcode?: string
-  ban_tcg?: string
-  ban_ocg?: string
-  ban_goat?: string
-  image_url?: string
-  image_url_small?: string
+  card_sets?: Array<any>
+  banlist_info?: object
+  card_images?: Array<any>
 }
 
 const Card = new Schema({
@@ -50,11 +46,9 @@ const Card = new Schema({
   archetype: { type: String },
   set_tag: { type: String },
   setcode: { type: String },
-  ban_tcg: { type: String },
-  ban_ocg: { type: String },
-  ban_goat: { type: String },
-  image_url: { type: String },
-  image_url_small: { type: String }
+  banlist_info:{ type: Object},
+  card_images: {type: Array},
+
 }, {
   timestamps: false
 })

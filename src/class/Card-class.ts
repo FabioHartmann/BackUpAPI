@@ -10,13 +10,12 @@ export class CardClass {
     public attribute?: string
     public scale?: string
     public linkval?: string
-    public linkmarkers?: string
+    public linkmarkers?: any
     public archetype?: string
-    public set_tag?: string
-    public setcode?: string
-    public ban_tcg?: string
-    public ban_ocg?: string
-    public ban_goat?: string
-    public image_url?: string
-    public image_url_small?: string
+    // eslint-disable-next-line camelcase
+    public card_sets?: any
+    // eslint-disable-next-line camelcase
+    public banlist_info?: object
+    // eslint-disable-next-line camelcase
+    public card_images?: any
 }

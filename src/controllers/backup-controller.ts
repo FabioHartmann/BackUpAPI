@@ -41,25 +41,29 @@ const insertData = async (list): Promise<void> => {
 
 class BackupController {
   public async backup (req: Request, res: Response): Promise<void> {
-    let resultData = await getData('https://db.ygoprodeck.com/api/v4/cardinfo.php?type=spell%20card&race=equip')
+    let resultData = await getData('https://db.ygoprodeck.com/api/v5/cardinfo.php?name=dark magician')
+    if (req) {
+      insertData(resultData)
+      return res.status(200).json({ success: false, msg: 'Backup concluido' })
+    }
     console.log(resultData.length)
 
-    const normalImg = resultData.map((card): string => card.image_url)
-    const smallImg = resultData.map((card): string => card.image_url_small)
+    // const normalImg = resultData.map((card): string => card.image_url)
+    // const smallImg = resultData.map((card): string => card.image_url_small)
 
-    downloadImg(normalImg, `${__dirname}/../img/pics`)
-      .then((): Promise<void> => {
-        return downloadImg(smallImg, `${__dirname}/../img/small_pics`)
-      })
-      .then((): Promise<void> => {
-        return insertData(resultData)
-      })
-      .then((): Response => {
-        return res.status(400).json({ success: false, msg: 'Backup concluido' })
-      })
-      .catch((): Response => {
-        return res.status(400).json({ success: false, msg: 'Erro no backup' })
-      })
+    // downloadImg(normalImg, `${__dirname}/../img/pics`)
+    //   .then((): Promise<void> => {
+    //     return downloadImg(smallImg, `${__dirname}/../img/small_pics`)
+    //   })
+    //   .then((): Promise<void> => {
+    //     return insertData(resultData)
+    //   })
+    //   .then((): Response => {
+    //     return res.status(400).json({ success: false, msg: 'Backup concluido' })
+    //   })
+    //   .catch((): Response => {
+    //     return res.status(400).json({ success: false, msg: 'Erro no backup' })
+    //   })
   }
 }
 
