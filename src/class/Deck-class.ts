@@ -4,6 +4,6 @@ export class DeckClass{
     _id:String
     deck_name?:String
     deck_cards?:CardsClass[]
-    extra_deck_card?: CardsClass[ ]
+    extra_deck_cards?: CardsClass[ ]
     favorite?:boolean 
 }

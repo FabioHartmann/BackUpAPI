@@ -123,21 +123,15 @@ class UserController{
     }
     
     let user = await User.findOne({username:req.body.username} );
-    let deckfound = user.decks.filter((deck) => deck.deck_name === req.body.deck_name);
-    // await User.updateOne({username:req.body.username}, {$set:{decks:deckList}});
   
 
   for(let i in user.decks){
     console.log(i);
     if(req.body.deck_name === user.decks[i].deck_name){
         user.decks.splice(i,1);
-    }else{
-      console.log('Caí no else');
-      
-    }
-    
+    }   
  }
- console.log(user.decks);
+
    removeDeck(user.decks)
     .then(() =>{
       return res.status(200).json({ success: true, msg: 'Deck Excluido'})
@@ -147,53 +141,115 @@ class UserController{
   }
 
   public async insertCardIntoDeck (req: Request, res: Response): Promise<void> { 
-    const  newCard = async () => {
-      await User.updateOne({username:req.body.username, 'decks.deck_name':req.body.deck_name},{$push:{'decks.$.deck_cards':req.body.card}},
-  );}      
+    const  newCardIntoMainDeck = async () => {
+      await User.updateOne({username:req.body.username, 'decks.deck_name':req.body.deck_name},{$push:{'decks.$.deck_cards':req.body.card}});
+    }      
   
-    const  cardAmountAtualization = async (cardList) =>{ 
+    const  cardAmountAtualizationIntoMainDeck = async (cardList) =>{ 
       await User.updateOne({username:req.body.username, 'decks.deck_name':req.body.deck_name}, {$set:{'decks.$.deck_cards':cardList}});
       }
+
+      const  newCardIntoExtraDeck = async () => {
+        await User.updateOne({username:req.body.username, 'decks.deck_name':req.body.deck_name},{$push:{'decks.$.extra_deck_cards':req.body.card}});
+      }      
+    
+      const  cardAmountAtualizationIntoExtraDeck = async (cardList) =>{ 
+        await User.updateOne({username:req.body.username, 'decks.deck_name':req.body.deck_name}, {$set:{'decks.$.extra_deck_cards':cardList}});
+        }
 
     let user = await User.findOne({username:req.body.username} );
     let deckfound = user.decks.filter((deck) => deck.deck_name === req.body.deck_name);
     
-      const filteredCardInDeck = deckfound[0].deck_cards.filter((card) => {
-        return card.card_id === req.body.card.card_id
-      }); 
-           
-          if((filteredCardInDeck.length > 0 )){
-             deckfound[0].deck_cards.forEach((card) =>{                
-                  if(card.card_id === req.body.card.card_id){
-                     const cardAmount = card.card_amount + req.body.card.card_amount;
-                     if(cardAmount > 3){
-                      card.card_amount = 3;
-                     }else{
-                      card.card_amount=cardAmount;
-                     }
-                  }
-                })                
-                cardAmountAtualization(deckfound[0].deck_cards)               
+  
+    if(req.body.card.type === "Effect Monster"  ||
+      req.body.card.type === "Flip Effect Monster"  ||
+      req.body.card.type ===  "Flip Tuner Effect Monster" ||
+      req.body.card.type === "Gemini Monster" ||
+      req.body.card.type === "Normal Monster" ||
+      req.body.card.type === "Normal Tuner Monster" ||
+      req.body.card.type === "Pendulum Effect Monster" ||
+      req.body.card.type ===  "Pendulum Flip Effect Monster" ||
+      req.body.card.type ===  "Pendulum Normal Monster" ||
+      req.body.card.type ===  "Pendulum Tuner Effect Monster" ||
+      req.body.card.type === "Ritual Effect Monster" ||
+      req.body.card.type ===  "Ritual Monster" ||
+      req.body.card.type ===  "Skill Card" ||
+      req.body.card.type ===   "Spell Card" ||
+      req.body.card.type ===  "Spirit Monster" ||
+      req.body.card.type ===  "Toon Monster" ||
+      req.body.card.type === "Trap Card"  ||
+      req.body.card.type ===  "Tuner Monster" ||
+      req.body.card.type ===  "Union Effect Monster" ||
+      req.body.card.type ===   "Union Tuner Effect Monster"
+       ){
+        const filteredCardInDeck = deckfound[0].deck_cards.filter((card) => {
+          return card.card_id === req.body.card.card_id
+        }); 
+             
+            if((filteredCardInDeck.length > 0 )){
+               deckfound[0].deck_cards.forEach((card) =>{                
+                    if(card.card_id === req.body.card.card_id){
+                       const cardAmount = card.card_amount + req.body.card.card_amount;
+                       if(cardAmount > 3){
+                        card.card_amount = 3;
+                       }else{
+                        card.card_amount=cardAmount;
+                       }
+                    }
+                  })                
+                  cardAmountAtualizationIntoMainDeck(deckfound[0].deck_cards)               
+                   .then(() =>{
+                    return res.status(200).json({ success: true, msg:'Quantidade atualizada', object:deckfound[0].deck_cards})
+                  })
+                  .catch(() =>{
+                    return res.status(400).json({ success: true, msg: 'Erro ao atualizar número de cartas' })
+                   });
+              }else{
+                 newCardIntoMainDeck()
                  .then(() =>{
-                  return res.status(200).json({ success: true, msg:'Quantidade atualizada', object:deckfound[0].deck_cards})
+                  return res.status(200).json({ success: true, msg: 'Nova Carta adicionada com sucesso' })
                 })
                 .catch(() =>{
-                  return res.status(400).json({ success: true, msg: 'Erro ao atualizar número de cartas' })
-                 });
-            }else{
-               newCard()
-               .then(() =>{
-                return res.status(200).json({ success: true, msg: 'Nova Carta adicionada com sucesso' })
-              })
-              .catch(() =>{
-                return res.status(400).json({ success: true, msg: 'Erro ao adicionar card' });
-          })
-  
-         }
+                  return res.status(400).json({ success: true, msg: 'Erro ao adicionar card' });
+            })
+    
+           }
+       }else{
+        const filteredCardInExtraDeck = deckfound[0].extra_deck_cards.filter((card) => {
+          return card.card_id === req.body.card.card_id
+        }); 
+
+        if((filteredCardInExtraDeck.length > 0 )){
+          deckfound[0].extra_deck_cards.forEach((card) =>{                
+               if(card.card_id === req.body.card.card_id){
+                  const cardAmount = card.card_amount + req.body.card.card_amount;
+                  if(cardAmount > 3){
+                   card.card_amount = 3;
+                  }else{
+                   card.card_amount=cardAmount;
+                  }
+               }
+             })                
+             cardAmountAtualizationIntoExtraDeck(deckfound[0].extra_deck_cards)               
+              .then(() =>{
+               return res.status(200).json({ success: true, msg:'Quantidade atualizada', object:deckfound[0].extra_deck_cards})
+             })
+             .catch(() =>{
+               return res.status(400).json({ success: true, msg: 'Erro ao atualizar número de cartas' })
+              });
+         }else{
+            newCardIntoExtraDeck()
+            .then(() =>{
+             return res.status(200).json({ success: true, msg: 'Nova Carta adicionada com sucesso' })
+           })
+           .catch(() =>{
+             return res.status(400).json({ success: true, msg: 'Erro ao adicionar card' });
+       })
+       } 
   };
+}
     
   public async removeCardIntoDeck (req: Request, res: Response): Promise<void> {
-
     const  removeCard = async (cardList) =>{ 
       await User.updateOne({username:req.body.username, 'decks.deck_name':req.body.deck_name}, {$set:{'decks.$.deck_cards':cardList}});
     }
