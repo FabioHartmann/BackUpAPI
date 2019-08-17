@@ -26,4 +26,7 @@ router.get('/singleCard/:card_id', user.singleCard)
 router.post('/insertCardIntoDeck', user.insertCardIntoDeck)
 
 router.get('/allCards', user.allCardList)
+
+router.delete('/deleteCardIntoDeck', user.removeCardIntoDeck)
+
 export default router

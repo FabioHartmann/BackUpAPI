@@ -118,15 +118,32 @@ class UserController{
   }
 
   public async deleteDeck (req: Request, res: Response): Promise<void> { 
-  // await User.findOneAndRemove({username:req.body.username, decks:[{deck_name:req.body.deck_name}] })
-  const c =  await User.findOne({username:req.body.username}).findOneAndRemove({deck_name:req.body.deck_name})
-  console.log(c);
+    const  removeDeck = async (deckList) =>{ 
+      await User.updateOne({username:req.body.username}, {$set:{decks:deckList}});
+    }
     
-    // .then(() =>{
-    //   return res.status(200).json({ success: true, msg: 'Deck Excluido'})
-    //  }).catch(() =>{
-    //   return res.status(400).json({ success: false, msg: 'Erro ao excluir'})
-    //  });
+    let user = await User.findOne({username:req.body.username} );
+    let deckfound = user.decks.filter((deck) => deck.deck_name === req.body.deck_name);
+    // await User.updateOne({username:req.body.username}, {$set:{decks:deckList}});
+  
+
+  for(let i in user.decks){
+    console.log(i);
+    if(req.body.deck_name === user.decks[i].deck_name){
+        user.decks.splice(i,1);
+    }else{
+      console.log('Caí no else');
+      
+    }
+    
+ }
+ console.log(user.decks);
+   removeDeck(user.decks)
+    .then(() =>{
+      return res.status(200).json({ success: true, msg: 'Deck Excluido'})
+     }).catch(() =>{
+      return res.status(400).json({ success: false, msg: 'Erro ao excluir'})
+     });
   }
 
   public async insertCardIntoDeck (req: Request, res: Response): Promise<void> { 
@@ -175,6 +192,28 @@ class UserController{
          }
   };
     
+  public async removeCardIntoDeck (req: Request, res: Response): Promise<void> {
+
+    const  removeCard = async (cardList) =>{ 
+      await User.updateOne({username:req.body.username, 'decks.deck_name':req.body.deck_name}, {$set:{'decks.$.deck_cards':cardList}});
+    }
+
+    let user = await User.findOne({username:req.body.username} );
+    let deckfound = user.decks.filter((deck) => deck.deck_name === req.body.deck_name);
+    
+           for(let i in deckfound[0].deck_cards){
+              if(req.body.card_id === deckfound[0].deck_cards[i].card_id){
+                 deckfound[0].deck_cards.splice(i,1);
+              }
+           }                      
+          removeCard(deckfound[0].deck_cards)               
+          .then(() =>{
+              return res.status(200).json({ success: true, msg:'Carta Removida.', object:deckfound[0].deck_cards})
+            })
+          .catch(() =>{
+              return res.status(400).json({ success: true, msg: 'Erro ao remover a carta.' })
+            });
+  };
   }
 
 
