@@ -5,8 +5,6 @@ import bodyParser from 'body-parser'
 
 import ColorCMD from '../util/ColorCMD'
 
-// import jwt from './../middlewares/authentication'
-
 // // Rotas
 import routes from '../routes/routes'
 

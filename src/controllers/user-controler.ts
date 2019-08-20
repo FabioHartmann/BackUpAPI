@@ -2,24 +2,56 @@ import { Request, Response } from 'express';
 import * as request from 'request-promise-native'
 import User from './../models/user-model'
 import Card from './../models/card-model'
-
+import jwt from 'jsonwebtoken'
+import util from './../util/util'
+import variables from './../config/variables'
 
 
 class UserController{
+
   public async createUser (req: Request, res: Response): Promise<void> {
-    User.create(req.body).then(() =>{
-    return res.status(200).json({ success: true, msg: 'Usuário Incluido' })
-   }).catch(() =>{
-    return res.status(400).json({ success: true, msg: 'Erro ao incluir' })
-   });
+    const user = {
+      username: req.body.username,
+      password: util.encode(req.body.password),
+      email: req.body.email
+    }
+
+    const sameUsername = await User.findOne({username:req.body.username});
+    const sameEmail = await User.findOne({email:req.body.email});  
+    
+
+    if (!sameUsername && !sameEmail){
+      await User.create(user).then(() =>{
+      return res.status(200).json({ success: true, msg: 'Usuário Incluido' })
+      }).catch(() =>{
+      return res.status(400).json({ success: false, msg: 'Erro ao incluir' })});
+    }else{
+      await User.findOne({username:req.body.username}).then(() =>{
+        return res.status(200).json({ success: true, msg: 'Usuário Já existe' })
+        }).catch(() =>{
+        return res.status(400).json({ success: false, msg: 'Falha de conexão' })});
+
+    }
   }
 
-  public async login (req: Request, res: Response): Promise<void> {
-     User.findOne({username:req.params.user, password:req.params.pass}).then(() =>{
-      return res.status(200).json({ success: true, msg: 'Login efetuado' })
-    }).catch(() =>{
-      return res.status(400).json({ success: true, msg: 'Erro ao logar' })
-    });
+  public async login (req: Request, res: Response): Promise<Response> {
+    const acces = await User.findOne({
+      username: req.body.username,
+      password: util.encode(req.body.password)
+    })    
+
+    if (!acces) return res.status(200).json({ success: false, msg: 'Usuário ou senha incorretos' })
+
+    const user = {
+      id: acces._id,
+      user: acces.username
+    }
+
+    const token = jwt.sign({ user }, variables.Security.secretKey, {
+      expiresIn: 14400
+    })
+    
+    return res.status(200).json({ success: true, _token: token })
   }
   
   public async insertCardIntoColection (req: Request, res: Response): Promise<void> { 
@@ -126,7 +158,6 @@ class UserController{
   
 
   for(let i in user.decks){
-    console.log(i);
     if(req.body.deck_name === user.decks[i].deck_name){
         user.decks.splice(i,1);
     }   
@@ -159,8 +190,17 @@ class UserController{
 
     let user = await User.findOne({username:req.body.username} );
     let deckfound = user.decks.filter((deck) => deck.deck_name === req.body.deck_name);
-    
-  
+
+    let totalCards = 0;
+    deckfound[0].deck_cards.forEach((card) =>{                
+     totalCards = totalCards + card.card_amount;
+      })
+      
+    let totalExtraCards = 0;
+    deckfound[0].extra_deck_cards.forEach((card) =>{                
+      totalExtraCards = totalExtraCards + card.card_amount;
+       }) 
+ 
     if(req.body.card.type === "Effect Monster"  ||
       req.body.card.type === "Flip Effect Monster"  ||
       req.body.card.type ===  "Flip Tuner Effect Monster" ||
@@ -182,72 +222,91 @@ class UserController{
       req.body.card.type ===  "Union Effect Monster" ||
       req.body.card.type ===   "Union Tuner Effect Monster"
        ){
-        const filteredCardInDeck = deckfound[0].deck_cards.filter((card) => {
-          return card.card_id === req.body.card.card_id
-        }); 
-             
-            if((filteredCardInDeck.length > 0 )){
-               deckfound[0].deck_cards.forEach((card) =>{                
-                    if(card.card_id === req.body.card.card_id){
-                       const cardAmount = card.card_amount + req.body.card.card_amount;
-                       if(cardAmount > 3){
-                        card.card_amount = 3;
-                       }else{
-                        card.card_amount=cardAmount;
-                       }
-                    }
-                  })                
-                  cardAmountAtualizationIntoMainDeck(deckfound[0].deck_cards)               
+        if((totalCards===60) ||
+        (totalCards === 59 && req.body.card.card_amount > 1) ||
+        (totalCards === 58 && req.body.card.card_amount > 2)){
+          await User.findOne({username:req.body.username}).then(()=>{
+            return res.status(200).json({ success: true, msg: 'VocÊ já possui essas cartas', cards: deckfound[0].deck_cards})
+          })
+        }else{
+         
+          const filteredCardInDeck = deckfound[0].deck_cards.filter((card) => {
+            return card.card_id === req.body.card.card_id
+          }); 
+               
+              if((filteredCardInDeck.length > 0 )){
+                 deckfound[0].deck_cards.forEach((card) =>{                
+                      if(card.card_id === req.body.card.card_id){
+                         const cardAmount = card.card_amount + req.body.card.card_amount;
+                         if(cardAmount > 3){
+                          card.card_amount = 3;
+                         }else{
+                          card.card_amount=cardAmount;
+                         }
+                      }
+                    })                
+                    cardAmountAtualizationIntoMainDeck(deckfound[0].deck_cards)               
+                     .then(() =>{
+                      return res.status(200).json({ success: true, msg:'Quantidade atualizada', object:deckfound[0].deck_cards})
+                    })
+                    .catch(() =>{
+                      return res.status(400).json({ success: true, msg: 'Erro ao atualizar número de cartas' })
+                     });
+                }else{
+                   newCardIntoMainDeck()
                    .then(() =>{
-                    return res.status(200).json({ success: true, msg:'Quantidade atualizada', object:deckfound[0].deck_cards})
+                    return res.status(200).json({ success: true, msg: 'Nova Carta adicionada com sucesso' })
                   })
                   .catch(() =>{
-                    return res.status(400).json({ success: true, msg: 'Erro ao atualizar número de cartas' })
-                   });
-              }else{
-                 newCardIntoMainDeck()
-                 .then(() =>{
-                  return res.status(200).json({ success: true, msg: 'Nova Carta adicionada com sucesso' })
-                })
-                .catch(() =>{
-                  return res.status(400).json({ success: true, msg: 'Erro ao adicionar card' });
-            })
-    
-           }
+                    return res.status(400).json({ success: true, msg: 'Erro ao adicionar card' });
+              })
+      
+             }
+        }
+        
        }else{
-        const filteredCardInExtraDeck = deckfound[0].extra_deck_cards.filter((card) => {
-          return card.card_id === req.body.card.card_id
-        }); 
+         if((totalExtraCards===15) ||
+        (totalExtraCards === 14 && req.body.card.card_amount > 1) ||
+        (totalExtraCards === 13 && req.body.card.card_amount > 2)){
+          await User.findOne({username:req.body.username}).then(()=>{
+            return res.status(200).json({ success: true, msg: 'VocÊ já possui essas cartas', cards: deckfound[0].extra_deck_cards})
+          })
+      }else{
+      
+      const filteredCardInExtraDeck = deckfound[0].extra_deck_cards.filter((card) => {
+        return card.card_id === req.body.card.card_id
+      }); 
 
-        if((filteredCardInExtraDeck.length > 0 )){
-          deckfound[0].extra_deck_cards.forEach((card) =>{                
-               if(card.card_id === req.body.card.card_id){
-                  const cardAmount = card.card_amount + req.body.card.card_amount;
-                  if(cardAmount > 3){
-                   card.card_amount = 3;
-                  }else{
-                   card.card_amount=cardAmount;
-                  }
-               }
-             })                
-             cardAmountAtualizationIntoExtraDeck(deckfound[0].extra_deck_cards)               
-              .then(() =>{
-               return res.status(200).json({ success: true, msg:'Quantidade atualizada', object:deckfound[0].extra_deck_cards})
-             })
-             .catch(() =>{
-               return res.status(400).json({ success: true, msg: 'Erro ao atualizar número de cartas' })
-              });
-         }else{
-            newCardIntoExtraDeck()
+      if((filteredCardInExtraDeck.length > 0 )){
+        deckfound[0].extra_deck_cards.forEach((card) =>{                
+            if(card.card_id === req.body.card.card_id){
+                const cardAmount = card.card_amount + req.body.card.card_amount;
+                if(cardAmount > 3){
+                card.card_amount = 3;
+                }else{
+                card.card_amount=cardAmount;
+                }
+            }
+          })                
+          cardAmountAtualizationIntoExtraDeck(deckfound[0].extra_deck_cards)               
             .then(() =>{
-             return res.status(200).json({ success: true, msg: 'Nova Carta adicionada com sucesso' })
-           })
-           .catch(() =>{
-             return res.status(400).json({ success: true, msg: 'Erro ao adicionar card' });
-       })
-       } 
-  };
-}
+            return res.status(200).json({ success: true, msg:'Quantidade atualizada', object:deckfound[0].extra_deck_cards})
+          })
+          .catch(() =>{
+            return res.status(400).json({ success: true, msg: 'Erro ao atualizar número de cartas' })
+            });
+      }else{
+          newCardIntoExtraDeck()
+          .then(() =>{
+          return res.status(200).json({ success: true, msg: 'Nova Carta adicionada com sucesso' })
+        })
+        .catch(() =>{
+          return res.status(400).json({ success: true, msg: 'Erro ao adicionar card' });
+    })
+    } 
+  }
+};
+  }
     
   public async removeCardIntoDeck (req: Request, res: Response): Promise<void> {
     const  removeCard = async (cardList) =>{ 
@@ -269,7 +328,7 @@ class UserController{
           .catch(() =>{
               return res.status(400).json({ success: true, msg: 'Erro ao remover a carta.' })
             });
-  };
+  }
   }
 
 

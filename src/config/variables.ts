@@ -6,7 +6,7 @@ const variables = {
     connection: process.env.connection || 'mongodb://localhost:27017/cards'
   },
   Security: {
-    secretKey: 'eusoqueromeformarlogo'
+    secretKey: 'falousIF'
   }
 }
 

@@ -2,6 +2,7 @@ import { Router } from 'express'
 
 import backup from './../controllers/backup-controller'
 import user from './../controllers/user-controler'
+import jwt from './../middlewares/authentication'
 
 const router = Router()
 
@@ -9,24 +10,38 @@ router.get('/backup', backup.backup)
 
 router.post('/user', user.createUser)
 
-router.get('/login/:user/:pass', user.login)
+router.post('/login/', user.login)
 
-router.post('/inserIntoColection', user.insertCardIntoColection)
+router.post('/inserIntoColection',
+//  jwt,
+  user.insertCardIntoColection)
 
-router.delete('/deleteIntoColection', user.removeCardIntoColection)
+router.delete('/deleteIntoColection',
+//  jwt,
+  user.removeCardIntoColection)
 
-router.post('/createDeck', user.createDeck)
+router.post('/createDeck',
+//  jwt,
+  user.createDeck)
 
-router.delete('/deleteDeck', user.deleteDeck)
+router.delete('/deleteDeck',
+//  jwt,
+  user.deleteDeck)
 
-router.get('/userCardsList/:username', user.userCardsList)
+router.get('/userCardsList/:username',
+//  jwt,
+  user.userCardsList)
 
 router.get('/singleCard/:card_id', user.singleCard)
 
-router.post('/insertCardIntoDeck', user.insertCardIntoDeck)
+router.post('/insertCardIntoDeck',
+//  jwt,
+  user.insertCardIntoDeck)
 
 router.get('/allCards', user.allCardList)
 
-router.delete('/deleteCardIntoDeck', user.removeCardIntoDeck)
+router.delete('/deleteCardIntoDeck',
+//  jwt,
+  user.removeCardIntoDeck)
 
 export default router

@@ -79,7 +79,7 @@ class Util {
     else return { result: false, m: `Id do ${model} inexistente` }
   }
 
-  public encode (password: string): string {
+  public encode (password: string): any {
     let teste = md5(password)
     return teste
   }
