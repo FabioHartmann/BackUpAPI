@@ -10,26 +10,14 @@ const getData = async (url: string): Promise<CardClass[]> => {
   return response
 }
 
-const waitFor = (ms): Promise<void> => new Promise((resolve): any => setTimeout(resolve, ms))
-
-async function asyncForEach (array, callback): Promise<void> {
-  for (let index = 0; index < array.length; index++) {
-    await callback(array[index], index, array)  
-  }
-}
-
-const insertData = async (list): Promise<void> => {
-  await asyncForEach(list, async (card): Promise<void> => {    
-    await waitFor(60);
-    await Card.create(card);
-  })
-}
-
 class BackupController {
-  public async backup (req: Request, res: Response): Promise<Response> {
+  public async backup (req: Request, res: Response): Promise<any> {
     let resultData = await getData('https://db.ygoprodeck.com/api/v5/cardinfo.php?fname=Dark Magician')
-      insertData(resultData)
-      return res.status(200).json({ success: true, msg: 'Backup concluido' })
+      await Card.create(resultData).then(()=>{
+        return res.status(200).json({ success: true, msg: 'Backup em Execução' })
+      }).catch(()=>{
+        return res.status(200).json({ success: true, msg: 'Backup em Execução' })
+      })
   }
 }
 

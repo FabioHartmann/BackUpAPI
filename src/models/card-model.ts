@@ -55,7 +55,6 @@ const Card = new Schema({
     validate: {
       validator: async (id): Promise<boolean> => {
         const search = await model('Card').findOne({ id: id });
-          console.log(search);
           
         if (search) return false
       },
