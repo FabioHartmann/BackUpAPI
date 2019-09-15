@@ -27,29 +27,28 @@ class UserController{
       return res.status(400).json({ success: false, msg: 'Erro ao incluir' })});
     }else{
       await User.findOne({username:req.body.username}).then(() =>{
-        return res.status(200).json({ success: true, msg: 'Usuário Já existe' })
-        }).catch(() =>{
-        return res.status(400).json({ success: false, msg: 'Falha de conexão' })});
+      return res.status(200).json({ success: true, msg: 'Usuário Já existe' })
+      }).catch(() =>{
+      return res.status(400).json({ success: false, msg: 'Falha de conexão' })});
 
     }
   }
 
-  public async login (req: Request, res: Response): Promise<Response> {
+  public async login (req: Request, res: Response): Promise<Response> {    
     const acces = await User.findOne({
       username: req.body.username,
       password: util.encode(req.body.password)
     })    
 
     if (!acces) return res.status(200).json({ success: false, msg: 'Usuário ou senha incorretos' })
-
     const user = {
       id: acces._id,
       user: acces.username
     }
-
     const token = jwt.sign({ user }, variables.Security.secretKey, {
       expiresIn: 14400
     })
+    console.log(token);
     
     return res.status(200).json({ success: true, _token: token })
   }
@@ -114,9 +113,73 @@ class UserController{
     if(card) res.status(200).json({ success: true, msg: 'Pesquisa concluída', list:card });
   }
   
-  public async allCardList (req: Request, res: Response): Promise<void>{
-    const cards = await Card.find();    
-    if(cards) res.status(200).json({ success: true, msg: 'Pesquisa concluída', list:cards});
+  public async allCardList (req: Request, res: Response): Promise<Response>{
+      const pageNumber = parseInt(req.query.pageNumber);
+      const size = parseInt(req.query.size);
+  
+
+      const pagination = {
+        skip:null,
+        limit:null,
+      };
+      const filter : Filter = {
+
+      }
+      if (req.query.name) {
+        filter.name = req.query.name
+       }
+       if (req.query.race) {
+        filter.race = req.query.race
+       }
+       if (req.query.attribute) {
+        filter.attribute = req.query.attribute
+       }
+       if (req.query.type) {
+        filter.type = req.query.type
+       }
+       if (req.query.archetype) {
+        filter.archetype = req.query.archetype
+       }
+       if (req.query.level) {
+        filter.level = req.query.level
+       }
+       
+      
+      if(pageNumber < 0 || pageNumber === 0) {
+        let response = {"error" : true,"message" : "invalid page number, should start with 1"};
+        return res.json(response);
+      }
+      
+      pagination.skip = size * (pageNumber - 1);
+      pagination.limit = size;
+      
+      const numberOfCards = await Card.countDocuments(filter, (error, count) =>{
+        if(error){
+          console.log('Erro' + error);
+        }
+        return count
+      })
+      const cards = await Card.find(filter, '', pagination, (error, results) =>{
+        if(error){
+          console.log('Erro' + error);
+        }        
+        return results
+      });
+
+    if(numberOfCards) res.status(200).send({
+      success: true,
+      msg: 'Pesquisa concluída',
+      list:cards,
+      cardNumber:numberOfCards
+        });
+
+    if(!numberOfCards) res.status(200).send({
+      success: false,
+      msg: 'Card do not exists',
+      list:cards,
+      cardNumber:numberOfCards
+        });
+
   }
 
   public async removeCardIntoColection (req: Request, res: Response): Promise<void> { 
@@ -333,3 +396,12 @@ class UserController{
 
 
 export default new UserController()
+
+interface Filter {
+  attribute ?:string,
+  name ?:string,
+  race ?:string,
+  level ?: string,
+  archetype ?: string,
+  type ?:string,
+}

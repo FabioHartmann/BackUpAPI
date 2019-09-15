@@ -12,7 +12,7 @@ const getData = async (url: string): Promise<CardClass[]> => {
 
 class BackupController {
   public async backup (req: Request, res: Response): Promise<any> {
-    let resultData = await getData('https://db.ygoprodeck.com/api/v5/cardinfo.php?fname=of Chaos')
+    let resultData = await getData('https://db.ygoprodeck.com/api/v5/cardinfo.php')
       await Card.create(resultData).then(()=>{
         return res.status(200).json({ success: true, msg: 'Backup em Execução' })
       }).catch(()=>{
