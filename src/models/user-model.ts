@@ -24,7 +24,31 @@ const User = new Schema({
      },
     email:{ type: String },
     password:{ type: String },
-    cards:{ type: Array },
+    cards:{ type: [
+      {card: {
+         id: { type: String },
+         race: { type: String },
+         linkmarkers:{ type:Array},
+         name: { type: String },
+         type: { type: String },
+         desc: { type: String },
+         atk: { type: String },
+         def: { type: String },
+         level: { type: String },
+         attribute: { type: String },
+         scale: { type: String },
+         linkval: { type: String },
+         archetype: { type: String },
+         // eslint-disable-next-line camelcase
+         card_sets: { type:Array},
+         // eslint-disable-next-line camelcase
+         banlist_info: { type:Object},
+         // eslint-disable-next-line camelcase
+         card_images: { type:Array},
+       },
+       card_amount:{type:Number},
+        }
+    ] },
     decks:{ type: Array },
 }, {
   timestamps: false

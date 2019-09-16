@@ -53,9 +53,9 @@ class UserController{
     return res.status(200).json({ success: true, _token: token })
   }
   
-  public async insertCardIntoColection (req: Request, res: Response): Promise<void> { 
+  public async insertCardIntoColection (req: Request, res: Response): Promise<void> {     
   const  newCard = async () => {
-    await User.findOneAndUpdate({username:req.body.username}, {$push:{cards:{card_id:req.body.card_id, card_amount:req.body.card_amount}}},
+    await User.findOneAndUpdate({username:req.body.username}, {$push:{cards:{card:req.body.card, card_amount:req.body.card_amount}}},
        {upsert:false} );
     }
 
@@ -71,12 +71,12 @@ class UserController{
       })
       .catch(() =>{
         return res.status(400).json({ success: true, msg: 'Erro ao adicionar card' })
-       });   
+       });
   }else{
-     const filteredCard = user.cards.filter((card) => card.card_id === req.body.card_id);
+     const filteredCard = user.cards.filter((card) => card.card.id === req.body.card.id);     
         if((filteredCard.length > 0 )){
              user.cards.forEach((card) =>{                
-                if(card.card_id === req.body.card_id){
+                if(card.card.id === req.body.card.id){
                    const cardAmount = card.card_amount + req.body.card_amount;
                    card.card_amount=cardAmount;                  
                 }
@@ -103,20 +103,99 @@ class UserController{
   
   }
 
-  public async userCardsList (req: Request, res: Response): Promise<void>{
-    const user = await User.findOne({username:req.params.username});    
-    if(user) res.status(200).json({ success: true, msg: 'Pesquisa concluída', list:user.cards });
+  public async userCardsList (req: Request, res: Response): Promise<Response>{
+    const pageNumber = parseInt(req.query.pageNumber);
+    const size = parseInt(req.query.size);
+
+
+    const pagination = {
+      skip:null,
+      limit:null,
+    };
+    const filter : Filter = {
+      username:req.params.username,
+      card:{
+
+      },
+    }
+    if (req.query.name) {
+      filter.card.name = req.query.name
+     }
+     if (req.query.race) {
+      filter.card.race = req.query.race
+     }
+     if (req.query.attribute) {
+      filter.card.attribute = req.query.attribute
+     }
+     if (req.query.type) {
+      filter.card.type = req.query.type
+     }
+     if (req.query.archetype) {
+      filter.card.archetype = req.query.archetype
+     }
+     if (req.query.level) {
+      filter.card.level = req.query.level
+     }
+     
+    
+    if(pageNumber < 0 || pageNumber === 0) {
+      let response = {"error" : true,"message" : "invalid page number, should start with 1"};
+      return res.json(response);
+    }
+    
+    pagination.skip = size * (pageNumber - 1);
+    pagination.limit = size;
+
+    const user = await User.find({ username: filter.username });
+
+    const list = user[0].cards.filter(item => {
+      let TMP = true;      
+      Object.keys(filter.card).forEach(key => {
+        if (item.card[key] !== filter.card[key]) {
+          TMP = false;
+        }
+      })
+      return TMP;
+    });
+    const numberOfCards = list.length;
+
+    if(numberOfCards) res.status(200).send({
+      success: true,
+      msg: 'Pesquisa concluída',
+      list:list,
+      cardNumber:numberOfCards
+        });
+
+    if(!numberOfCards) res.status(200).send({
+      success: false,
+      msg: 'Card do not exists',
+      list:list,
+      cardNumber:numberOfCards
+        });
   }
 
   public async singleCard (req: Request, res: Response): Promise<void>{
-    const card = await Card.findOne({id:req.params.card_id});    
-    if(card) res.status(200).json({ success: true, msg: 'Pesquisa concluída', list:card });
+    const card = await Card.findOne({id:req.params.card_id}); 
+    const userCard = await User.findOne({username:'felipe'});
+    
+    const cardExist = userCard.cards.filter((element)=>{
+      if(element.card.id === card.id && element.card_amount >0){
+        return true;
+      }
+    })
+    
+    let cardExists = false;
+    if(cardExist.length > 0){
+        cardExists = true;
+    }
+
+    if(card) res.status(200).json({ success: true, msg: 'Pesquisa concluída', list:card, userOwnThisCard:cardExists});
+
   }
   
   public async allCardList (req: Request, res: Response): Promise<Response>{
       const pageNumber = parseInt(req.query.pageNumber);
       const size = parseInt(req.query.size);
-  
 
       const pagination = {
         skip:null,
@@ -404,4 +483,6 @@ interface Filter {
   level ?: string,
   archetype ?: string,
   type ?:string,
+  username ?:string,
+  card ?: any,
 }
