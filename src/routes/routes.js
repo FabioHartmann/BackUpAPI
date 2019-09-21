@@ -44,4 +44,14 @@ router.delete('/deleteCardIntoDeck',
 //  jwt,
   user.removeCardIntoDeck)
 
+  router.get('/allDecks',
+  //jwt,
+  user.listAllDeck
+  )
+  router.get('/deck',
+  //jwt,
+  user.findDeck
+  )
+  
+
 export default router

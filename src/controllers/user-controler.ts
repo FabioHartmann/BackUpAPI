@@ -144,7 +144,7 @@ class UserController{
     }
     
     pagination.skip = size * (pageNumber - 1);
-    pagination.limit = size;
+    pagination.limit = size*pageNumber;
 
     const user = await User.find({ username: filter.username });
 
@@ -159,12 +159,21 @@ class UserController{
     });
     const numberOfCards = list.length;
 
-    if(numberOfCards) res.status(200).send({
+    const cardList = list.slice(pagination.skip, pagination.limit)
+    
+    if(numberOfCards  && cardList.length > 0) res.status(200).send({
       success: true,
       msg: 'Pesquisa concluída',
-      list:list,
+      list:cardList,
       cardNumber:numberOfCards
         });
+
+    if(numberOfCards  && cardList.length === 0) res.status(200).send({
+      success: false,
+      msg: 'Pesquisa Com erro',
+      list:cardList,
+      cardNumber:numberOfCards
+      });  
 
     if(!numberOfCards) res.status(200).send({
       success: false,
@@ -176,7 +185,7 @@ class UserController{
 
   public async singleCard (req: Request, res: Response): Promise<void>{
     const card = await Card.findOne({id:req.params.card_id}); 
-    const userCard = await User.findOne({username:'felipe'});
+    const userCard = await User.findOne({username:req.query.username});
     
     const cardExist = userCard.cards.filter((element)=>{
       if(element.card.id === card.id && element.card_amount >0){
@@ -314,21 +323,34 @@ class UserController{
   }
 
   public async insertCardIntoDeck (req: Request, res: Response): Promise<void> { 
+    const card = await  Card.findOne({id:req.body.card.card_id});
+
+    const cardObject = {
+      card,
+      card_amount: req.body.card.card_amount,
+    }
+
     const  newCardIntoMainDeck = async () => {
-      await User.updateOne({username:req.body.username, 'decks.deck_name':req.body.deck_name},{$push:{'decks.$.deck_cards':req.body.card}});
+      console.log('Nova carta no deck:');
+      await User.updateOne({username:req.body.username, 'decks.deck_name':req.body.deck_name},{$push:{'decks.$.deck_cards':cardObject}});
     }      
   
     const  cardAmountAtualizationIntoMainDeck = async (cardList) =>{ 
+      console.log('Atualizando quantidade no main deck:');
       await User.updateOne({username:req.body.username, 'decks.deck_name':req.body.deck_name}, {$set:{'decks.$.deck_cards':cardList}});
       }
 
       const  newCardIntoExtraDeck = async () => {
-        await User.updateOne({username:req.body.username, 'decks.deck_name':req.body.deck_name},{$push:{'decks.$.extra_deck_cards':req.body.card}});
+        console.log('Nova carta no deck:');
+        await User.updateOne({username:req.body.username, 'decks.deck_name':req.body.deck_name},{$push:{'decks.$.extra_deck_cards':cardObject}});
       }      
     
       const  cardAmountAtualizationIntoExtraDeck = async (cardList) =>{ 
+        console.log('Atualizando quantidade no extr deck:');
+
         await User.updateOne({username:req.body.username, 'decks.deck_name':req.body.deck_name}, {$set:{'decks.$.extra_deck_cards':cardList}});
-        }
+        }        
+
 
     let user = await User.findOne({username:req.body.username} );
     let deckfound = user.decks.filter((deck) => deck.deck_name === req.body.deck_name);
@@ -337,7 +359,8 @@ class UserController{
     deckfound[0].deck_cards.forEach((card) =>{                
      totalCards = totalCards + card.card_amount;
       })
-      
+//talvez terá que somar com a carta incluída nesse exato momento
+
     let totalExtraCards = 0;
     deckfound[0].extra_deck_cards.forEach((card) =>{                
       totalExtraCards = totalExtraCards + card.card_amount;
@@ -368,17 +391,17 @@ class UserController{
         (totalCards === 59 && req.body.card.card_amount > 1) ||
         (totalCards === 58 && req.body.card.card_amount > 2)){
           await User.findOne({username:req.body.username}).then(()=>{
-            return res.status(200).json({ success: true, msg: 'VocÊ já possui essas cartas', cards: deckfound[0].deck_cards})
+            return res.status(200).json({ success: true, msg: 'Voce já possui essas cartas', cards: deckfound[0].deck_cards})
           })
         }else{
-         
           const filteredCardInDeck = deckfound[0].deck_cards.filter((card) => {
-            return card.card_id === req.body.card.card_id
+            console.log(card.card.id);
+            
+            return card.card.id === req.body.card.card_id
           }); 
-               
               if((filteredCardInDeck.length > 0 )){
                  deckfound[0].deck_cards.forEach((card) =>{                
-                      if(card.card_id === req.body.card.card_id){
+                      if(card.card.id === req.body.card.card_id){
                          const cardAmount = card.card_amount + req.body.card.card_amount;
                          if(cardAmount > 3){
                           card.card_amount = 3;
@@ -416,12 +439,12 @@ class UserController{
       }else{
       
       const filteredCardInExtraDeck = deckfound[0].extra_deck_cards.filter((card) => {
-        return card.card_id === req.body.card.card_id
+        return card.card.id === req.body.card.card_id
       }); 
 
       if((filteredCardInExtraDeck.length > 0 )){
         deckfound[0].extra_deck_cards.forEach((card) =>{                
-            if(card.card_id === req.body.card.card_id){
+            if(card.card.id === req.body.card.card_id){
                 const cardAmount = card.card_amount + req.body.card.card_amount;
                 if(cardAmount > 3){
                 card.card_amount = 3;
@@ -438,6 +461,9 @@ class UserController{
             return res.status(400).json({ success: true, msg: 'Erro ao atualizar número de cartas' })
             });
       }else{
+        if(cardObject.card_amount > 3){
+          cardObject.card_amount = 3;
+        }
           newCardIntoExtraDeck()
           .then(() =>{
           return res.status(200).json({ success: true, msg: 'Nova Carta adicionada com sucesso' })
@@ -471,7 +497,77 @@ class UserController{
               return res.status(400).json({ success: true, msg: 'Erro ao remover a carta.' })
             });
   }
+
+  public async listAllDeck (req: Request, res: Response): Promise<Response> {
+    const pageNumber = parseInt(req.query.pageNumber);
+      const size = parseInt(req.query.size);
+      const queryType = parseInt(req.query.type);
+    
+      const pagination = {
+        skip:null,
+        limit:null,
+      }
+
+      const filter ={
+        deck_name: req.query.name,
+        username:req.query.username
+      }       
+
+      if(pageNumber < 0 || pageNumber === 0) {
+        let response = {"error" : true,"message" : "invalid page number, should start with 1"};
+        return res.json(response);
+      }
+
+      pagination.skip = size * (pageNumber - 1);
+      pagination.limit = size;
+      
+
+      //Se type =1 vai trazer os decks filtrados.
+      //Se não, trás todos decks do user
+
+
+      if(queryType === 1){        
+       const user = await User.find({ username: filter.username });
+       let newList = [];
+       const list = user[0].decks.forEach(item => {
+           if(item.deck_name.toLowerCase().includes(filter.deck_name.toLowerCase())){
+              newList.push(item);
+              return item;
+             };
+            }); 
+            if(newList.length > 0){
+            return res.status(200).json({ success: true, msg: 'Decks encontrados', decks:newList, listSize:newList.length  });
+          }else{
+            return res.status(200).json({ success: false, msg: 'Decks Não encontrados', decks:newList });
+          }
+      }else{ 
+         const user = await User.find({username:filter.username}, 'decks');          
+          if(user[0].decks.length > 0){
+           return res.status(200).json({ success: true, msg: 'Decks encontrados', decks:user[0].decks, listSize:user[0].decks.length });
+         }else{
+           return res.status(200).json({ success: true, msg: 'Não há decks'});
+         }
+      }
   }
+
+  public async findDeck (req: Request, res: Response): Promise<Response> {
+      const username = req.query.username;
+      const name = req.query.name;
+
+      const user = await User.find({ username: username });
+    
+      const deck = user[0].decks.filter((deck) =>{
+        if (deck.deck_name.toLowerCase() === name.toLowerCase()){
+          return true
+        }
+      })
+
+  
+      return res.status(200).json({ success: true, msg: 'Deck encontrado', deck:deck });
+
+  }
+
+}
 
 
 export default new UserController()
