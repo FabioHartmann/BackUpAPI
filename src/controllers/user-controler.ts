@@ -187,18 +187,23 @@ class UserController{
     const card = await Card.findOne({id:req.params.card_id}); 
     const userCard = await User.findOne({username:req.query.username});
     
+    let card_amount;
     const cardExist = userCard.cards.filter((element)=>{
       if(element.card.id === card.id && element.card_amount >0){
+        card_amount = element.card_amount;        
         return true;
       }
     })
+
+    console.log(card_amount);
+    
     
     let cardExists = false;
     if(cardExist.length > 0){
         cardExists = true;
     }
 
-    if(card) res.status(200).json({ success: true, msg: 'Pesquisa concluída', list:card, userOwnThisCard:cardExists});
+    if(card) res.status(200).json({ success: true, msg: 'Pesquisa concluída', list:card, card_amount: card_amount, userOwnThisCard:cardExists});
 
   }
   
