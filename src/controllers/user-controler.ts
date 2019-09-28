@@ -46,10 +46,8 @@ class UserController{
       user: acces.username
     }
     const token = jwt.sign({ user }, variables.Security.secretKey, {
-      expiresIn: 14400
-    })
-    console.log(token);
-    
+      expiresIn: 7200,
+    })    
     return res.status(200).json({ success: true, _token: token })
   }
   

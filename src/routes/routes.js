@@ -13,43 +13,43 @@ router.post('/user', user.createUser)
 router.post('/login/', user.login)
 
 router.post('/inserIntoColection',
-//  jwt,
+  jwt,
   user.insertCardIntoColection)
 
 router.delete('/deleteIntoColection',
-//  jwt,
+  jwt,
   user.removeCardIntoColection)
 
 router.post('/createDeck',
-//  jwt,
+  jwt,
   user.createDeck)
 
 router.delete('/deleteDeck',
-//  jwt,
+  jwt,
   user.deleteDeck)
 
 router.get('/userCardsList/:username',
-//  jwt,
+  jwt,
   user.userCardsList)
 
 router.get('/singleCard/:card_id', user.singleCard)
 
 router.post('/insertCardIntoDeck',
-//  jwt,
+  jwt,
   user.insertCardIntoDeck)
 
 router.get('/allCards', user.allCardList)
 
 router.delete('/deleteCardIntoDeck',
-//  jwt,
+  jwt,
   user.removeCardIntoDeck)
 
   router.get('/allDecks',
-  //jwt,
+  jwt,
   user.listAllDeck
   )
   router.get('/deck',
-  //jwt,
+  jwt,
   user.findDeck
   )
   
