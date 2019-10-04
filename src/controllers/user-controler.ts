@@ -40,7 +40,7 @@ class UserController{
       password: util.encode(req.body.password)
     })    
 
-    if (!acces) return res.status(200).json({ success: false, msg: 'Usuário ou senha incorretos' })
+    if (!acces) return res.status(200).json({ success: false, msg: 'Wrong user or password ' })
     const user = {
       id: acces._id,
       user: acces.username
@@ -105,7 +105,6 @@ class UserController{
     const pageNumber = parseInt(req.query.pageNumber);
     const size = parseInt(req.query.size);
 
-
     const pagination = {
       skip:null,
       limit:null,
@@ -113,7 +112,6 @@ class UserController{
     const filter : Filter = {
       username:req.params.username,
       card:{
-
       },
     }
     if (req.query.name) {
@@ -191,18 +189,14 @@ class UserController{
         card_amount = element.card_amount;        
         return true;
       }
-    })
+    })   
 
-    console.log(card_amount);
-    
-    
     let cardExists = false;
     if(cardExist.length > 0){
         cardExists = true;
     }
 
     if(card) res.status(200).json({ success: true, msg: 'Pesquisa concluída', list:card, card_amount: card_amount, userOwnThisCard:cardExists});
-
   }
   
   public async allCardList (req: Request, res: Response): Promise<Response>{
@@ -235,7 +229,6 @@ class UserController{
         filter.level = req.query.level
        }
        
-      
       if(pageNumber < 0 || pageNumber === 0) {
         let response = {"error" : true,"message" : "invalid page number, should start with 1"};
         return res.json(response);
@@ -334,23 +327,18 @@ class UserController{
     }
 
     const  newCardIntoMainDeck = async () => {
-      console.log('Nova carta no deck:');
       await User.updateOne({username:req.body.username, 'decks.deck_name':req.body.deck_name},{$push:{'decks.$.deck_cards':cardObject}});
     }      
   
     const  cardAmountAtualizationIntoMainDeck = async (cardList) =>{ 
-      console.log('Atualizando quantidade no main deck:');
       await User.updateOne({username:req.body.username, 'decks.deck_name':req.body.deck_name}, {$set:{'decks.$.deck_cards':cardList}});
       }
 
       const  newCardIntoExtraDeck = async () => {
-        console.log('Nova carta no deck:');
         await User.updateOne({username:req.body.username, 'decks.deck_name':req.body.deck_name},{$push:{'decks.$.extra_deck_cards':cardObject}});
       }      
     
       const  cardAmountAtualizationIntoExtraDeck = async (cardList) =>{ 
-        console.log('Atualizando quantidade no extr deck:');
-
         await User.updateOne({username:req.body.username, 'decks.deck_name':req.body.deck_name}, {$set:{'decks.$.extra_deck_cards':cardList}});
         }        
 
@@ -397,9 +385,7 @@ class UserController{
             return res.status(200).json({ success: true, msg: 'Voce já possui essas cartas', cards: deckfound[0].deck_cards})
           })
         }else{
-          const filteredCardInDeck = deckfound[0].deck_cards.filter((card) => {
-            console.log(card.card.id);
-            
+          const filteredCardInDeck = deckfound[0].deck_cards.filter((card) => {           
             return card.card.id === req.body.card.card_id
           }); 
               if((filteredCardInDeck.length > 0 )){
@@ -437,7 +423,7 @@ class UserController{
         (totalExtraCards === 14 && req.body.card.card_amount > 1) ||
         (totalExtraCards === 13 && req.body.card.card_amount > 2)){
           await User.findOne({username:req.body.username}).then(()=>{
-            return res.status(200).json({ success: true, msg: 'VocÊ já possui essas cartas', cards: deckfound[0].extra_deck_cards})
+            return res.status(200).json({ success: true, msg: 'Você já possui essas cartas', cards: deckfound[0].extra_deck_cards})
           })
       }else{
       
