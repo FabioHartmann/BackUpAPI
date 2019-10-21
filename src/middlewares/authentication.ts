@@ -5,7 +5,6 @@ import variables from './../config/variables'
 
 const token = async (req: Request, res: Response, next: NextFunction): Promise<Response> => {
   let token =req.headers.authorization || req.body.token;
-  console.log(token);
   
   if (!!token) {
     let tokenHash = token.split(' ');    
