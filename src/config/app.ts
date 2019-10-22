@@ -4,11 +4,10 @@ import { connect, ConnectionOptions } from 'mongoose'
 import bodyParser from 'body-parser'
 import * as request from 'request-promise-native'
 
-
 import ColorCMD from '../util/ColorCMD'
-
-// // Rotas
 import routes from '../routes/routes'
+
+
 var CronJob = require('cron').CronJob
 const job = new CronJob('0 0 0 * * *', async() => {
   await request.get('http://localhost:3001/backup')
