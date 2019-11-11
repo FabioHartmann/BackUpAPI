@@ -202,14 +202,14 @@ class UserController{
   public async allCardList (req: Request, res: Response): Promise<Response>{
       const pageNumber = parseInt(req.query.pageNumber);
       const size = parseInt(req.query.size);
+      
 
       const pagination = {
         skip:null,
         limit:null,
       };
-      const filter : Filter = {
-
-      }
+      const filter : Filter = {}
+      
       if (req.query.name) {
         filter.name = req.query.name
        }

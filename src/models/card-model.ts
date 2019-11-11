@@ -1,7 +1,6 @@
 /* eslint-disable camelcase */
 /* eslint-disable @typescript-eslint/camelcase */
 import { Schema, model, Document } from 'mongoose'
-import { ObjectID } from 'bson';
 
 export interface CardInterface extends Document {
   id?: string
